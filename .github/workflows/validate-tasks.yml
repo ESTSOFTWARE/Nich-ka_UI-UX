@@ -1,0 +1,152 @@
+name: Validar documentación de tareas
+
+on:
+  pull_request:
+    paths:
+      - "docs/tasks/**.md"
+
+jobs:
+  validate:
+    name: Validar archivos en docs/tasks/
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validar archivos de tareas
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TASKS_DIR="docs/tasks"
+          FIGMA_PROJECT_ID="gXA9g3ioQeuq5uGOoKDtmE"
+          TOTAL_ERRORS=0
+
+          echo "=== Validando archivos en $TASKS_DIR/ ==="
+          echo ""
+
+          # Solo archivos .md añadidos o modificados en este PR
+          mapfile -t CHANGED_FILES < <(
+            git diff --name-only --diff-filter=AM "origin/${{ github.base_ref }}...HEAD" \
+              -- "$TASKS_DIR/*.md" 2>/dev/null || true
+          )
+
+          if [ ${#CHANGED_FILES[@]} -eq 0 ]; then
+            echo "No se encontraron archivos .md nuevos o modificados en $TASKS_DIR/."
+            exit 0
+          fi
+
+          for FILEPATH in "${CHANGED_FILES[@]}"; do
+            FILENAME=$(basename "$FILEPATH")
+
+            # Ignorar plantilla y archivos de ejemplo
+            if [[ "$FILENAME" =~ ^(TEMPLATE|EJEMPLO-) ]]; then
+              echo "[SKIP] Ignorando: $FILENAME"
+              continue
+            fi
+
+            echo "──────────────────────────────────────"
+            echo "Revisando: $FILENAME"
+            FILE_ERRORS=0
+
+            # 1. NOMBRE DEL ARCHIVO
+            # Formato: TICKET-NombreDescriptivo.md
+            # Ejemplos válidos: EST19-LotesFermentacion.md, NKUI7-Login.md
+            if [[ ! "$FILENAME" =~ ^[A-Z]{2,6}[0-9]+-[A-Za-z][A-Za-z0-9]+\.md$ ]]; then
+              echo "  [ERROR] [NOMBRE] '$FILENAME' no sigue el formato requerido."
+              echo "          Esperado: [TICKET]-[NombreDescriptivo].md"
+              echo "          Ejemplo:  EST19-LotesFermentacion.md"
+              FILE_ERRORS=$((FILE_ERRORS + 1))
+            else
+              echo "  [OK] [NOMBRE] Formato correcto"
+            fi
+
+            # 2. SECCIONES OBLIGATORIAS
+            declare -a MISSING_SECTIONS=()
+            REQUIRED_SECTIONS=(
+              "## Descripción"
+              "## Figma"
+              "## Decisiones de diseño"
+              "## Componentes"
+              "## Flujo de usuario"
+            )
+            for SECTION in "${REQUIRED_SECTIONS[@]}"; do
+              if ! grep -qF "$SECTION" "$FILEPATH"; then
+                MISSING_SECTIONS+=("$SECTION")
+              fi
+            done
+
+            if [ ${#MISSING_SECTIONS[@]} -gt 0 ]; then
+              for MISSING in "${MISSING_SECTIONS[@]}"; do
+                echo "  [ERROR] [SECCION] Falta la sección obligatoria: '$MISSING'"
+              done
+              FILE_ERRORS=$((FILE_ERRORS + ${#MISSING_SECTIONS[@]}))
+            else
+              echo "  [OK] [SECCIONES] Todas las secciones obligatorias presentes"
+            fi
+
+            # 3. URL DE FIGMA
+            if ! grep -q "figma.com" "$FILEPATH"; then
+              echo "  [ERROR] [FIGMA] No se encontró ningún link de Figma en el archivo"
+              FILE_ERRORS=$((FILE_ERRORS + 1))
+            elif ! grep -q "$FIGMA_PROJECT_ID" "$FILEPATH"; then
+              echo "  [ERROR] [FIGMA] El link de Figma no corresponde al proyecto Nich-Borrador."
+              echo "          El ID del proyecto debe ser: $FIGMA_PROJECT_ID"
+              echo "          URL correcta: https://www.figma.com/design/$FIGMA_PROJECT_ID/Nich-Borrador?node-id=..."
+              FILE_ERRORS=$((FILE_ERRORS + 1))
+            elif grep -q "node-id=XXXX" "$FILEPATH"; then
+              echo "  [ERROR] [FIGMA] El placeholder 'node-id=XXXX' no fue reemplazado con el node-id real del frame."
+              FILE_ERRORS=$((FILE_ERRORS + 1))
+            else
+              echo "  [OK] [FIGMA] URL del proyecto correcto"
+            fi
+
+            # 4. METADATA: campos con valores de placeholder
+            declare -a UNFILLED=()
+            PLACEHOLDERS=("EST__" "YYYY-MM-DD" "Tu nombre")
+            for PH in "${PLACEHOLDERS[@]}"; do
+              if grep -qF "$PH" "$FILEPATH"; then
+                UNFILLED+=("'$PH'")
+              fi
+            done
+
+            if [ ${#UNFILLED[@]} -gt 0 ]; then
+              echo "  [ERROR] [METADATA] Campos sin completar: ${UNFILLED[*]}"
+              FILE_ERRORS=$((FILE_ERRORS + ${#UNFILLED[@]}))
+            else
+              echo "  [OK] [METADATA] Campos de metadata completados"
+            fi
+
+            # 5. DECISIONES DE DISEÑO: debe tener al menos un ### sub-encabezado
+            DECISIONS_CONTENT=$(awk '/^## Decisiones de diseño/{f=1;next} f && /^## /{exit} f' "$FILEPATH")
+            if ! echo "$DECISIONS_CONTENT" | grep -qE "^### .+"; then
+              echo "  [ERROR] [DECISIONES] La sección 'Decisiones de diseño' no contiene ninguna decisión."
+              echo "          Agrega al menos un '### Nombre de la decision' con su justificacion."
+              FILE_ERRORS=$((FILE_ERRORS + 1))
+            else
+              echo "  [OK] [DECISIONES] Al menos una decisión de diseño documentada"
+            fi
+
+            # Resultado por archivo
+            echo ""
+            if [ "$FILE_ERRORS" -gt 0 ]; then
+              echo "  RESULTADO: FALLO - $FILE_ERRORS error(es) en $FILENAME"
+              TOTAL_ERRORS=$((TOTAL_ERRORS + FILE_ERRORS))
+            else
+              echo "  RESULTADO: PASS - $FILENAME es válido"
+            fi
+            echo ""
+          done
+
+          echo "══════════════════════════════════════"
+          if [ "$TOTAL_ERRORS" -gt 0 ]; then
+            echo "TOTAL: $TOTAL_ERRORS error(es) encontrado(s)."
+            echo ""
+            echo "Revisa CONTRIBUTING.md para ver el formato y las secciones requeridas."
+            exit 1
+          else
+            echo "TOTAL: Todos los archivos son válidos."
+          fi
