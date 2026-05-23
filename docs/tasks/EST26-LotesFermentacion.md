@@ -1,11 +1,11 @@
-# EST26 Lotes de Fermentación
+# EST26 Lotes de Fermentación (actualizado)
 
 
 | Campo       | Valor                        |
 |-------------|------------------------------|
 | Ticket Jira | EST26                        |
 | Diseñador   | Lyz Solar                    |
-| Fecha       | 2023-10-25                   |
+| Fecha       | 2026-05-23                   |
 | Estado      | En revisión                  |
 | Plataforma  | Móvil                        |
 
@@ -17,9 +17,21 @@ Diseño de la vista completa de "Lotes de fermentación" para la aplicación mó
 
 ---
 
+##  Correcciones y Consistencia de UI Aplicadas
+Para cumplir con los estándares globales de la aplicación, se aplicaron las siguientes optimizaciones sobre el diseño original:
+
+1. **Barra de Navegación Global:** Se eliminó la barra personalizada y se reutilizó el componente oficial de navegación de la app para asegurar la consistencia.
+2. **Botón de Regreso (Back Button):** Se implementó la variante estándar ya existente en las demás pantallas del proyecto en lugar de crear un elemento nuevo.
+3. **Ícono de Notificaciones:** Se integró el ícono de notificaciones global en el extremo derecho de la barra superior.
+4. **Tipografía y Jerarquía:** - Se cambió la fuente de `Geist` a **`Inter`** (tipografía oficial de la app).
+   - Se ajustó el tamaño del título de la pantalla a **`15px`** para que coincida con el resto de las vistas.
+5. **Paleta de Colores por Modo:**
+   - **Modo Claro (Light Mode):** Título principal en color Negro, fondo claro institucional y tarjetas con contraste sutil.
+   - **Modo Oscuro (Dark Mode):** Título principal en color Blanco, fondos oscuros unificados y tipografías secundarias legibles.
+
 ## Figma
 
-[Ver frame en Figma](https://www.figma.com/design/gXA9g3ioQeuq5uGOoKDtmE/Nich-Borrador?node-id=48-931&t=HMJJkMJ6fze2if3j-4)
+[Ver frame en Figma](https://www.figma.com/design/gXA9g3ioQeuq5uGOoKDtmE/Nich-Borrador?node-id=88-1134&t=GTUb27oAUgakBf3M-4)  
 
 
 ---
@@ -43,12 +55,13 @@ Para los indicadores de progreso y etiquetas de estado (Activo, Secado), se opt�
 | Componente | Acción | Notas |
 |------------|--------|-------|
 | TopAppBar | Reutilizado | Adaptado con título "Lotes" y navegación. |
-| Summary Card | Creado nuevo | Para visualización rápida de totales (Total, Activos, Secado). |
+| Summary Card | Creado nuevo | Para visualización rápida de totales (Total 24, Activos 12, Secado 8). |
 | Search Bar | Reutilizado | Componente base de búsqueda del sistema. |
 | Chip Filter | Reutilizado | Implementado para filtros de estado: Todos, Activos, Secado, Completados. |
-| Batch Card | Creado nuevo | Tarjeta compleja con barras de progreso y metadata del lote. |
-| FAB (+) | Reutilizado | Botón de acción principal para crear nuevos lotes. |
-| BottomNavBar | Reutilizado | Navegación principal de la app. |
+| Batch Card | Creado nuevo | Tarjeta compleja con barras de progreso circular y metadata del lote. |
+| FAB (+) | Reutilizado | Botón de acción principal para crear nuevos lotes en verde (#00C853). |
+| BottomNavBar | Reutilizado | Navegación principal de la app con iconos en español. |
+
 
 
 ---
