@@ -8,7 +8,7 @@
 |-------------|--------------------|
 | Ticket Jira | EST82              |
 | Diseñador   | Lyz Solar         |
-| Fecha       | 2026-06-19         |
+| Fecha       | 2026-06-21         |
 | Estado      | Completado         |
 | Plataforma  | Web            |
 
@@ -16,7 +16,7 @@
 
 ## Descripción
 
-Se diseñó la interfaz administrativa centralizada para la Configuración Global del sistema. Desde esta pantalla el usuario administrador gestiona y calibra los parámetros avanzados del algoritmo genético que optimiza la fermentación de café, establece restricciones de entorno y define los umbrales críticos de alerta para los cinco sensores integrados (pH, Temperatura, Alcohol, Conductividad y Turbidez).
+Se diseñó la interfaz de Configuración Global para la consola de administración del sistema Nich-Ká. Se diseñó la interfaz de Configuración Global para la consola de administración del sistema Nich-Ká. Esta pantalla permite gestionar de forma centralizada los parámetros del algoritmo genético de optimización, definir las restricciones operativas de los procesos de fermentación (temperatura, pH y tiempo), configurar los umbrales críticos de las alertas de sensores e inspeccionar visualmente los niveles de criticidad del sistema. Además, incluye un historial de cambios para auditorías, controles maestros de acción y un flujo de confirmación integrado tras el guardado exitoso de los datos.
 
 ---
 
@@ -28,37 +28,55 @@ Se diseñó la interfaz administrativa centralizada para la Configuración Globa
 
 ## Decisiones de diseño
 
-### Layout modular de tres bloques funcionales
+### Layout modular oscuro y enfocado
+Se estructuró la pantalla sobre un fondo totalmente negro (`#000000`) con un ancho de 1536px para entornos de escritorio industriales. Los bloques se segmentan mediante tarjetas con bordes sutiles de baja opacidad (`#D9D9D9` al 25%), lo que mitiga la fatiga visual de los operadores y organiza la configuración en secciones verticales claramente identificables.
 
-Se estructuró la pantalla mediante una jerarquía vertical e independiente para evitar la sobrecarga cognitiva: una sección para el comportamiento matemático del algoritmo, una tarjeta lateral para límites físicos del entorno y un contenedor inferior exclusivo para la salud de los sensores.
+### Distribución adaptativa de parámetros y rangos
+Para optimizar el escaneo de datos numéricos en pantalla ancha:
+* **Parámetros AG:** Organizados en una rejilla de 2 columnas para campos individuales (ej. Tamaño de población y Máx. generaciones).
+* **Restricciones de proceso:** Diseñadas en 3 columnas anchas, integrando internamente pares de valores "mínimo" y "máximo" de lectura paralela.
+* **Umbrales de alerta:** Distribuidos en una fila compacta de 5 columnas para visualizar la salud de todos los sensores en un solo plano horizontal.
 
-### Visualización de rangos mediante inputs dobles paralelos
-
-Para optimizar el espacio en la sección de Restricciones (Temperatura, pH, Tiempo), se descartaron las listas verticales complejas y se implementaron pares de campos mínimos y máximos en formato horizontal unidos por la palabra "to". Esto reduce el scroll vertical y facilita la lectura comparativa.
-
-### Estructura horizontal escalable para tarjetas de sensores
-
-Los cinco sensores obligatorios se ordenaron en un layout de rejilla horizontal por columnas independientes. Si en el futuro el sistema integra nuevos tipos de sensores, la interfaz puede crecer de forma natural hacia abajo o transformarse en un carrusel sin alterar la estructura base del módulo.
-
+### Código cromático de estatus y criticidad
+Se utiliza el color verde (`#2ECC71`) para acentuar la navegación activa, los valores óptimos (como el 80% en probabilidad de cruce) y las alertas informativas rutinarias. Para la escala de alertas, se asignó un indicador circular diferenciado: Verde para estados Informativos, Gris Claro para Advertencias y Blanco Puro para estados Críticos, asegurando una rápida interpretación sin saturar de color la interfaz.
 ---
 
 ## Componentes
 
-| Componente     | Acción       | Notas                                        |
-|----------------|--------------|----------------------------------------------|
-| Sidebar Left   | Reutilizado  | Con estado activo en la pestaña "Genetic Config". |
-| Input Field    | Reutilizado  | Variante Dark con tipografía activa en verde brillante (#00FF00). |
-| Slider Control | Creado nuevo | Frame: `Components/Slider` — aplicado para Prob. de Cruce y Mutación. |
-| Dropdown Select| Reutilizado  | Modificado para las variantes de selección única (`Torneo Binario`). |
-| Alert Level Bar| Creado nuevo | Contenedor de niveles con estados fijo: Informativo, Advertencia y Crítico. |
-| Primary Button | Reutilizado  | Botón sólido verde con el texto "GUARDAR CONFIGURACIÓN". |
-
+| Componente     | Acción       | Notas                                                                |
+|----------------|--------------|----------------------------------------------------------------------|
+| Sidebar Left   | Reutilizado  | Ancho de 220px con el elemento "Parámetros AG" en estado activo (`#2ECC71`). |
+| Input Field    | Reutilizado  | Variantes oscuras (`fill-opacity: 0.08`) para lectura y edición de valores únicos. |
+| Tooltip Icon   | Creado nuevo | Icono circular (`i`) con borde atenuado para desplegar ayudas contextuales. |
+| Range Field    | Creado nuevo | Entrada doble horizontal para gestionar mínimos y máximos en una sola celda. |
+| Action Bar     | Creado nuevo | Fila inferior con tres botones maestros de control (Cancelar, Guardar, Restaurar). |
+| Dialog Modal   | Creado nuevo | Pop-up central de confirmación con check de éxito (`path` vectorizado). |
 ---
 
 ## Flujo de usuario
 
 ```
-Cualquier pantalla → Sidebar lateral (Menú: Genetic Config) → [Esta pantalla: Configuración Global] → Botón "Guardar Configuración" → Notificación flotante de éxito (Toast)
+[Cualquier pantalla de la consola]
+       │
+       ▼ (1. Clic en Sidebar izquierdo)
+[Pestaña: Parámetros AG]
+       │
+       ▼ (2. Carga de la interfaz)
+[Pantalla: Configuración Global] ─── (Revisión de parámetros actuales)
+       │
+       ├───► (Modificación de datos en campos de texto)
+       │
+       ▼ (3. Clic en botón principal)
+[Botón: Guardar configuración]
+       │
+       ▼ (4. Disparo de acción / Interrupción en pantalla)
+[Modal de Confirmación (Estado de éxito)] ─── (Bloquea fondo con los datos guardados)
+       │
+       ▼ (5. Clic en botón del Modal)
+[Botón: Entendido]
+       │
+       ▼ (6. Cierre de Modal)
+[Pantalla: Configuración Global (Estado Base)]
 ```
 
 ---
