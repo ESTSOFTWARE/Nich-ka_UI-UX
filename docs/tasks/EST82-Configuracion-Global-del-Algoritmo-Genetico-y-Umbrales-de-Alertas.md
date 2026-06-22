@@ -22,7 +22,7 @@ Se diseñó la interfaz de Configuración Global para la consola de administraci
 
 ## Figma
 
-[Ver frame en Figma](https://www.figma.com/design/gXA9g3ioQeuq5uGOoKDtmE/Nich-Borrador?node-id=0-1&p=f&t=cLXypTo0WkSJzZJy-0)
+[Ver frame en Figma](https://www.figma.com/design/maOvQeLPtYzeSWPmLpBMTC/Nich-Ka?node-id=2710-2&t=XCUgrAJo0WiaoOhX-4)
 
 ---
 
